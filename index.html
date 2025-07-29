@@ -18,179 +18,248 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .strong-signal-glow-call {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.7);
+        }
+        .strong-signal-glow-put {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            border: 1px solid rgba(239, 68, 68, 0.7);
+        }
+        .gauge-container {
+            width: 150px;
+            height: 75px;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        .gauge-bg {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(from -90deg, #ef4444, #f59e0b, #10b981);
+            position: absolute;
+            top: 0;
+        }
+        .gauge-cover {
+            width: 130px;
+            height: 130px;
+            background: white;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            border-radius: 50%;
+        }
+        .gauge-needle {
+            width: 2px;
+            height: 65px;
+            background: #374151;
+            position: absolute;
+            bottom: 10px;
+            left: 74px;
+            transform-origin: bottom;
+            transition: transform 0.5s ease-in-out;
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <div class="container mx-auto p-4 max-w-lg">
-        <header class="mb-6 text-center">
-            <h1 class="text-3xl font-bold text-blue-600">Nifty Priority Dashboard</h1>
-            <p class="text-gray-500 text-sm" id="last-update">Fetching latest data...</p>
-        </header>
-        
-        <div id="loader" class="flex justify-center items-center my-12">
-            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
-        </div>
-        
-        <div id="error-message" class="hidden card bg-red-100 border border-red-400 text-red-700" role="alert">
-            <strong class="font-bold">An Error Occurred:</strong>
-            <pre class="mt-2 text-sm whitespace-pre-wrap" id="error-text"></pre>
-        </div>
+<div class="container mx-auto p-4 max-w-lg">
+    <header class="mb-6 text-center">
+        <h1 class="text-3xl font-bold text-blue-600">Nifty Priority Dashboard</h1>
+        <p class="text-gray-500 text-sm" id="last-update">Fetching latest data...</p>
+    </header>
 
-        <main id="dashboard-content" class="hidden">
-            
-            <!-- Nifty Spot Card -->
-            <div class="card text-center">
-                <h2 class="text-lg font-medium text-gray-500">Nifty Spot</h2>
-                <p id="spot-value" class="text-5xl font-bold text-blue-600 mt-1">--</p>
-            </div>
-
-            <!-- Signals Card -->
-            <div class="card">
-                <div class="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                        <h3 class="font-semibold text-gray-600">Multi-Factor Signal</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-green-600 font-semibold">Buy Call</p>
-                            <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
-                        </div>
-                        <div class="mt-2">
-                            <p class="text-sm text-red-600 font-semibold">Buy Put</p>
-                            <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-gray-600">Simple OI Change Signal</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-green-600 font-semibold">Buy Call</p>
-                            <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
-                        </div>
-                        <div class="mt-2">
-                            <p class="text-sm text-red-600 font-semibold">Buy Put</p>
-                            <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Conviction Analysis Card -->
-            <div class="card">
-                <h2 class="text-xl font-bold text-center mb-4">Conviction Analysis</h2>
-                <div class="space-y-6">
-                    <div id="call-conviction-container">
-                        <!-- Call conviction content injected here -->
-                    </div>
-                    <div id="put-conviction-container">
-                        <!-- Put conviction content injected here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Market Internals Card -->
-            <div class="card">
-                 <h2 class="text-xl font-bold text-center mb-4">Market Internals</h2>
-                 <div class="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-500">PCR (OI)</h3>
-                        <p id="pcr-oi-value" class="text-2xl font-bold mt-1">--</p>
-                    </div>
-                     <div>
-                        <h3 class="text-sm font-medium text-gray-500">Max Pain</h3>
-                        <p id="max-pain-value" class="text-2xl font-bold mt-1">--</p>
-                    </div>
-                 </div>
-            </div>
-
-        </main>
+    <div id="loader" class="flex justify-center items-center my-12">
+        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
     </div>
-    <script>
-        const showError = (message, details = '') => {
-            document.getElementById('error-text').textContent = `${message}\n\n${details}`;
-            document.getElementById('error-message').classList.remove('hidden');
-            document.getElementById('loader').classList.add('hidden');
-        };
 
-        async function fetchData() {
-            try {
-                const response = await fetch('/.netlify/functions/dhan');
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Function returned an error: ${response.status} - ${errorText}`);
-                }
-                return await response.json();
-            } catch (error) {
-                showError("Failed to fetch data from the serverless function.", error.message);
-                return null;
+    <div id="error-message" class="hidden card bg-red-100 border border-red-400 text-red-700" role="alert">
+        <strong class="font-bold">An Error Occurred:</strong>
+        <pre class="mt-2 text-sm whitespace-pre-wrap" id="error-text"></pre>
+    </div>
+
+    <main id="dashboard-content" class="hidden">
+
+        <div class="card text-center">
+            <h2 class="text-lg font-medium text-gray-500 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                Nifty Spot
+            </h2>
+            <p id="spot-value" class="text-5xl font-bold mt-1 transition-colors duration-500">--</p>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-center mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+                Trading Signals
+            </h2>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <h3 class="font-semibold text-gray-600 col-span-1">Multi-Factor</h3>
+                <h3 class="font-semibold text-gray-600 col-span-1">Simple OI Change</h3>
+                <div class="col-span-2 border-t pt-4 mt-2">
+                    <p class="text-sm text-green-600 font-semibold mb-1">Buy Call</p>
+                    <div class="grid grid-cols-2">
+                        <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
+                        <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
+                    </div>
+                </div>
+                <div class="col-span-2 border-t pt-4 mt-2">
+                    <p class="text-sm text-red-600 font-semibold mb-1">Buy Put</p>
+                    <div class="grid grid-cols-2">
+                        <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
+                        <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="call-conviction-card" class="card">
+            <div id="call-conviction-container"></div>
+        </div>
+        <div id="put-conviction-card" class="card">
+            <div id="put-conviction-container"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-center mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3" /></svg>
+                Market Internals
+            </h2>
+            <div class="grid grid-cols-2 gap-4 items-center">
+                <div class="text-center">
+                    <h3 class="text-sm font-medium text-gray-500">PCR (OI)</h3>
+                    <div class="gauge-container mt-2">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-cover"></div>
+                        <div id="pcr-needle" class="gauge-needle"></div>
+                    </div>
+                    <p id="pcr-oi-value" class="text-2xl font-bold mt-1">--</p>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-sm font-medium text-gray-500">Max Pain</h3>
+                    <p id="max-pain-value" class="text-3xl font-bold mt-1">--</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    const showError = (message, details = '') => {
+        document.getElementById('error-text').textContent = `${message}\n\n${details}`;
+        document.getElementById('error-message').classList.remove('hidden');
+        document.getElementById('loader').classList.add('hidden');
+    };
+
+    async function fetchData() {
+        try {
+            const response = await fetch('/.netlify/functions/dhan');
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Function returned an error: ${response.status} - ${errorText}`);
             }
+            return await response.json();
+        } catch (error) {
+            showError("Failed to fetch data from the serverless function.", error.message);
+            return null;
+        }
+    }
+
+    function renderDashboard(analytics) {
+        // Spot Price
+        const spotEl = document.getElementById('spot-value');
+        spotEl.textContent = analytics.spot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        spotEl.classList.remove('text-green-600', 'text-red-600');
+        if (analytics.spot > analytics.previous_close) {
+            spotEl.classList.add('text-green-600');
+        } else {
+            spotEl.classList.add('text-red-600');
         }
 
-        function renderDashboard(analytics) {
-            // Priority Dashboard
-            document.getElementById('spot-value').textContent = analytics.spot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('buy-call-signal-scored').textContent = analytics.buy_call_level_scored.toLocaleString('en-IN');
-            document.getElementById('buy-put-signal-scored').textContent = analytics.buy_put_level_scored.toLocaleString('en-IN');
-            document.getElementById('buy-call-signal-simple').textContent = analytics.buy_call_level_simple.toLocaleString('en-IN');
-            document.getElementById('buy-put-signal-simple').textContent = analytics.buy_put_level_simple.toLocaleString('en-IN');
+        // Signals
+        document.getElementById('buy-call-signal-scored').textContent = analytics.buy_call_level_scored.toLocaleString('en-IN');
+        document.getElementById('buy-put-signal-scored').textContent = analytics.buy_put_level_scored.toLocaleString('en-IN');
+        document.getElementById('buy-call-signal-simple').textContent = analytics.buy_call_level_simple.toLocaleString('en-IN');
+        document.getElementById('buy-put-signal-simple').textContent = analytics.buy_put_level_simple.toLocaleString('en-IN');
 
-            // Market Internals
-            document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
-            document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
+        // Market Internals
+        document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
+        document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
 
-            const createConvictionHTML = (conviction, type) => {
-                let colorClasses = 'border-gray-300';
-                let badgeClasses = 'bg-gray-200 text-gray-800';
-                if (conviction.strength === 'Strong') {
-                    colorClasses = type === 'call' ? 'border-green-500' : 'border-red-500';
-                    badgeClasses = type === 'call' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
-                } else if (conviction.strength === 'Medium') {
-                    colorClasses = 'border-yellow-400';
-                    badgeClasses = 'bg-yellow-400 text-white';
+        // PCR Gauge
+        const pcrValue = parseFloat(analytics.pcr_oi);
+        const pcrMin = 0.5, pcrMax = 1.5;
+        const angle = -90 + ((Math.max(pcrMin, Math.min(pcrMax, pcrValue)) - pcrMin) / (pcrMax - pcrMin)) * 180;
+        document.getElementById('pcr-needle').style.transform = `rotate(${angle}deg)`;
+
+        // Conviction Analysis
+        const createConvictionHTML = (conviction, type) => {
+            let badgeClasses = 'bg-gray-200 text-gray-800';
+            if (conviction.strength === 'Strong') badgeClasses = type === 'call' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+            else if (conviction.strength === 'Medium') badgeClasses = 'bg-yellow-400 text-white';
+
+            const createStrengthMeter = (score) => {
+                let bars = '';
+                for (let i = 1; i <= 3; i++) {
+                    const barColor = (score >= i * 2 - 1) ? (type === 'call' ? 'bg-green-500' : 'bg-red-500') : 'bg-gray-200';
+                    bars += `<div class="w-2 h-4 rounded-full ${barColor}"></div>`;
                 }
-
-                let factorsHTML = '<div class="text-left text-sm space-y-2 mt-3">';
-                if (conviction.supporting.length > 0) {
-                    factorsHTML += '<div><p class="font-semibold text-green-600">Supporting:</p><ul class="list-disc list-inside text-gray-600">';
-                    conviction.supporting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
-                    factorsHTML += '</ul></div>';
-                }
-                if (conviction.contradicting.length > 0) {
-                    factorsHTML += '<div><p class="font-semibold text-red-600">Contradicting:</p><ul class="list-disc list-inside text-gray-600">';
-                    conviction.contradicting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
-                    factorsHTML += '</ul></div>';
-                }
-                factorsHTML += '</div>';
-
-                return `
-                    <div class="flex items-start space-x-3">
-                        <div class="w-1.5 h-full rounded-full ${colorClasses.replace('border-', 'bg-')}"></div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center">
-                                <p class="font-bold text-lg">${type === 'call' ? 'Call' : 'Put'} Conviction</p>
-                                <span class="px-3 py-1 text-xs font-bold rounded-full ${badgeClasses}">${conviction.strength}</span>
-                            </div>
-                            ${factorsHTML}
-                        </div>
-                    </div>
-                `;
+                return `<div class="flex space-x-1 items-center">${bars}</div>`;
             };
 
-            document.getElementById('call-conviction-container').innerHTML = createConvictionHTML(analytics.call_conviction, 'call');
-            document.getElementById('put-conviction-container').innerHTML = createConvictionHTML(analytics.put_conviction, 'put');
-        }
-
-        async function main() {
-            document.getElementById('loader').classList.remove('hidden');
-            document.getElementById('dashboard-content').classList.add('hidden');
-            document.getElementById('error-message').classList.add('hidden');
-            const apiPayload = await fetchData();
-            if (apiPayload) {
-                renderDashboard(apiPayload.analytics);
-                document.getElementById('loader').classList.add('hidden');
-                document.getElementById('dashboard-content').classList.remove('hidden');
-                document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            let factorsHTML = '<div class="text-left text-sm space-y-3 mt-4">';
+            if (conviction.supporting.length > 0) {
+                factorsHTML += `<div><p class="font-semibold text-green-600">Supporting:</p><ul class="list-disc list-inside text-gray-600 space-y-1 mt-1">`;
+                conviction.supporting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
+                factorsHTML += '</ul></div>';
             }
+            if (conviction.contradicting.length > 0) {
+                factorsHTML += `<div><p class="font-semibold text-red-600">Contradicting:</p><ul class="list-disc list-inside text-gray-600 space-y-1 mt-1">`;
+                conviction.contradicting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
+                factorsHTML += '</ul></div>';
+            }
+            factorsHTML += '</div>';
+
+            return `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                            <p class="font-bold text-lg">${type === 'call' ? 'Call' : 'Put'} Conviction</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${createStrengthMeter(conviction.score)}
+                            <span class="px-3 py-1 text-xs font-bold rounded-full ${badgeClasses}">${conviction.strength}</span>
+                        </div>
+                    </div>
+                    ${factorsHTML}
+                `;
+        };
+
+        const callCard = document.getElementById('call-conviction-card');
+        const putCard = document.getElementById('put-conviction-card');
+        callCard.innerHTML = createConvictionHTML(analytics.call_conviction, 'call');
+        putCard.innerHTML = createConvictionHTML(analytics.put_conviction, 'put');
+
+        callCard.className = 'card'; // Reset classes
+        putCard.className = 'card';
+        if (analytics.call_conviction.strength === 'Strong') callCard.classList.add('strong-signal-glow-call');
+        if (analytics.put_conviction.strength === 'Strong') putCard.classList.add('strong-signal-glow-put');
+    }
+
+    async function main() {
+        document.getElementById('loader').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('hidden');
+        document.getElementById('error-message').classList.add('hidden');
+        const apiPayload = await fetchData();
+        if (apiPayload) {
+            renderDashboard(apiPayload.analytics);
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
         }
-        document.addEventListener('DOMContentLoaded', () => { main(); setInterval(main, 60000); });
-    </script>
+    }
+    document.addEventListener('DOMContentLoaded', () => { main(); setInterval(main, 60000); });
+</script>
 </body>
 </html>

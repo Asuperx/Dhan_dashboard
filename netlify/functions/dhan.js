@@ -5,10 +5,9 @@ const indianFormat = (num) => {
     return Math.round(num).toLocaleString('en-IN');
 };
 
-// Helper to calculate percentile rank, similar to pandas' rank(pct=True)
 const getPercentileRanks = (arr) => {
     const sorted = [...arr].map((value, originalIndex) => ({ value, originalIndex }))
-                           .sort((a, b) => a.value - b.value);
+        .sort((a, b) => a.value - b.value);
     const ranks = new Array(arr.length);
     sorted.forEach(({ originalIndex }, i) => {
         ranks[originalIndex] = (i + 1) / arr.length;
@@ -34,7 +33,7 @@ const calculateSignalConviction = (signalType, analytics, df) => {
     let score = 0;
     const sup = [], con = [];
     const { pcr_oi, total_pe_change, total_ce_change, spot } = analytics;
-    
+
     const oi_ratio = total_ce_change > 0 ? parseFloat((total_pe_change / total_ce_change).toFixed(2)) : 0;
     const ce_unwind = df.filter(r => r['Strike Price'] <= spot && r['CE Change'] < 0).reduce((sum, r) => sum + r['CE Change'], 0);
     const pe_unwind = df.filter(r => r['Strike Price'] >= spot && r['PE Change'] < 0).reduce((sum, r) => sum + r['PE Change'], 0);
@@ -44,7 +43,7 @@ const calculateSignalConviction = (signalType, analytics, df) => {
         if (oi_ratio > 1.5) { sup.push(`Strong Put Writing (Ratio: ${oi_ratio})`); score += 2; }
         else if (oi_ratio > 1.0) { sup.push("Put Writing > Call Writing"); score++; }
         if (ce_unwind < -10000) { sup.push(`Call Writers Covering (${indianFormat(Math.abs(ce_unwind))})`); score += 2; }
-        
+
         if (pcr_oi < 0.8) { con.push(`PCR < 0.8 (${pcr_oi})`); score--; }
         if (oi_ratio > 0 && oi_ratio < 0.8) { con.push("Call Writing > Put Writing"); score--; }
         if (pe_unwind < -10000) { con.push(`Put Writers Covering (${indianFormat(Math.abs(pe_unwind))})`); score -= 2; }
@@ -75,20 +74,20 @@ exports.handler = async function (event, context) {
     };
 
     try {
-        // Step 1: Fetch Expiry Dates
         const expiryPayload = { "UnderlyingScrip": 13, "UnderlyingSeg": "IDX_I" };
         const expiryResponse = await fetch(`${BASE_URL}/optionchain/expirylist`, { method: 'POST', headers, body: JSON.stringify(expiryPayload) });
         const expiryData = await expiryResponse.json();
         if (expiryData.status !== 'success' || !expiryData.data?.length) throw new Error(`Failed to fetch expiry dates: ${JSON.stringify(expiryData)}`);
         const nearestExpiry = expiryData.data[0];
 
-        // Step 2: Fetch Option Chain
         const ocPayload = { "UnderlyingScrip": 13, "UnderlyingSeg": "IDX_I", "Expiry": nearestExpiry };
         const ocResponse = await fetch(`${BASE_URL}/optionchain`, { method: 'POST', headers, body: JSON.stringify(ocPayload) });
         const ocData = await ocResponse.json();
         if (ocData.status !== 'success' || !ocData.data?.oc) throw new Error(`Failed to fetch option chain: ${JSON.stringify(ocData)}`);
-        
+
         const spot_price = ocData.data.last_price;
+        const previous_close_price = ocData.data.oc[Object.keys(ocData.data.oc)[0]].ce.previous_close_price; // Get previous close from an option
+
         const df = Object.entries(ocData.data.oc).map(([strike, options]) => {
             const ce = options.ce || {}; const pe = options.pe || {};
             return {
@@ -98,7 +97,6 @@ exports.handler = async function (event, context) {
             };
         }).sort((a, b) => a['Strike Price'] - b['Strike Price']);
 
-        // Step 3: Calculate Analytics
         const peOI_ranks = getPercentileRanks(df.map(r => r['PE OI']));
         const peChange_ranks = getPercentileRanks(df.map(r => r['PE Change']));
         const peVolume_ranks = getPercentileRanks(df.map(r => r['PE Volume']));
@@ -112,19 +110,20 @@ exports.handler = async function (event, context) {
         });
 
         const findMaxIndex = (key) => df.reduce((maxIndex, row, index, arr) => row[key] > arr[maxIndex][key] ? index : maxIndex, 0);
-        
+
         const analytics = {
             spot: spot_price,
+            previous_close: previous_close_price,
             pcr_oi: (df.reduce((s, r) => s + r['PE OI'], 0) / df.reduce((s, r) => s + r['CE OI'], 0)).toFixed(2),
             max_pain: calculateMaxPain(df),
             total_pe_change: df.reduce((s, r) => s + r['PE Change'], 0),
             total_ce_change: df.reduce((s, r) => s + r['CE Change'], 0),
-            buy_call_level_simple: df[findMaxIndex('PE Change')]['Strike Price'] - 25,
-            buy_put_level_simple: df[findMaxIndex('CE Change')]['Strike Price'] + 25,
+            buy_call_level_simple: df[findMaxIndex('PE Change')]['Strike Price'],
+            buy_put_level_simple: df[findMaxIndex('CE Change')]['Strike Price'],
             buy_call_level_scored: df[findMaxIndex('Support_Score')]['Strike Price'],
             buy_put_level_scored: df[findMaxIndex('Resistance_Score')]['Strike Price'],
         };
-        
+
         analytics.call_conviction = calculateSignalConviction('call', analytics, df);
         analytics.put_conviction = calculateSignalConviction('put', analytics, df);
 
