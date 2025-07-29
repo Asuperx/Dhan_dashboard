@@ -10,63 +10,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .loader {
-            border-top-color: #3498db;
-            -webkit-animation: spin 1s linear infinite;
-            animation: spin 1s linear infinite;
-        }
-        @-webkit-keyframes spin {
-            0% { -webkit-transform: rotate(0deg); }
-            100% { -webkit-transform: rotate(360deg); }
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Style for D3 chart text */
-        .axis text, .legend text {
-            font-size: 12px;
-            fill: #6b7280;
-        }
-        .axis path, .axis line {
-            stroke: #e5e7eb;
-        }
-        .bar-label {
-            font-size: 10px;
-            fill: white;
-            text-anchor: middle;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
-
-    <!-- Main Container -->
     <div class="container mx-auto p-4 max-w-7xl">
-
-        <!-- Header -->
         <header class="mb-6 text-center">
             <h1 class="text-3xl font-bold text-blue-600">Nifty Option Chain</h1>
             <p class="text-gray-500" id="last-update">Fetching latest data...</p>
         </header>
-
-        <!-- Loading Spinner -->
         <div id="loader" class="flex justify-center items-center my-10">
             <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
         </div>
-        
-        <!-- Error Message Container -->
         <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative my-4" role="alert">
             <strong class="font-bold">An Error Occurred:</strong>
             <pre class="mt-2 text-sm whitespace-pre-wrap" id="error-text"></pre>
         </div>
-
-        <!-- Dashboard Content (hidden until data loads) -->
         <main id="dashboard-content" class="hidden">
-            
-            <!-- KPI Cards -->
             <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-xl shadow-sm text-center">
                     <h2 class="text-sm font-medium text-gray-500">Nifty Spot</h2>
@@ -85,374 +47,122 @@
                     <p id="sentiment-meter" class="text-2xl font-bold mt-1">--</p>
                 </div>
             </section>
-
-            <!-- Option Chain Table -->
             <section class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
                  <div class="overflow-x-auto">
                     <table class="w-full text-sm text-center">
                         <thead class="bg-blue-600 text-white">
                             <tr>
-                                <th class="p-3 font-semibold">OI</th>
-                                <th class="p-3 font-semibold">Change OI</th>
-                                <th class="p-3 font-semibold">Volume</th>
+                                <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
                                 <th class="p-3 font-semibold bg-gray-800">Strike</th>
-                                <th class="p-3 font-semibold">OI</th>
-                                <th class="p-3 font-semibold">Change OI</th>
-                                <th class="p-3 font-semibold">Volume</th>
+                                <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
                             </tr>
                         </thead>
-                        <tbody id="option-chain-body">
-                           <!-- Rows will be injected by JavaScript -->
-                        </tbody>
+                        <tbody id="option-chain-body"></tbody>
                     </table>
                 </div>
             </section>
-
-            <!-- Charts -->
             <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <h3 class="font-semibold text-center mb-2">OI Profile</h3>
-                    <div id="oi-profile-chart"></div>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <h3 class="font-semibold text-center mb-2">Change in OI Profile</h3>
-                    <div id="change-oi-chart"></div>
-                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm"><h3 class="font-semibold text-center mb-2">OI Profile</h3><div id="oi-profile-chart"></div></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm"><h3 class="font-semibold text-center mb-2">Change in OI Profile</h3><div id="change-oi-chart"></div></div>
             </section>
-
         </main>
     </div>
-
     <script>
-        // =============================================================================
-        // 0. CONFIGURATION & STATE
-        // =============================================================================
-        
-        // !!! IMPORTANT SECURITY WARNING !!!
-        // DO NOT expose your credentials in a publicly hosted application.
-        // This is for personal, local use only.
-        const DHAN_CONFIG = {
-            CLIENT_ID: "1100240271",
-            ACCESS_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzU1NzYxNTY0LCJ0b2tlbkNvbnN1bWVyVHlwZSI6IlNFTEYiLCJ3ZWJob29rVXJsIjoiIiwiZGhhbkNsaWVudElkIjoiMTEwMDI0MDI3MSJ9.mON61upcBLAmhWJL_Vj3eNAibuC_EQA5zjiUwlG1SA7eNF8pnUkLide1GyVdHmHVyiOsp7fuT8JM0ONUCLTOzA",
-            BASE_URL: "https://api.dhan.co/v2"
-        };
-
-        let appState = {
-            analytics: {},
-            fullData: []
-        };
-
-        // =============================================================================
-        // 1. UTILITY FUNCTIONS
-        // =============================================================================
-        
-        const indianFormat = (num) => {
-            if (isNaN(num)) return num;
-            const n = parseFloat(num);
-            return n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-        };
-        
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
         const showError = (message, details = '') => {
-            let fullError = message;
-            if (details) {
-                fullError += `\n\nDetails: ${details}`;
-            }
-            document.getElementById('error-text').textContent = fullError;
+            document.getElementById('error-text').textContent = `${message}\n\n${details}`;
             document.getElementById('error-message').classList.remove('hidden');
             document.getElementById('loader').classList.add('hidden');
         };
 
-        // =============================================================================
-        // 2. API & DATA PROCESSING
-        // =============================================================================
-
-        async function fetchFromDhan(endpoint, payload) {
-            // FIXED: Switched to a CORS proxy that better handles POST requests with custom headers.
-            const proxyUrl = 'https://corsproxy.io/?';
-            const targetUrl = encodeURIComponent(`${DHAN_CONFIG.BASE_URL}${endpoint}`);
-            const url = `${proxyUrl}${targetUrl}`;
-
-            const headers = {
-                'Content-Type': 'application/json',
-                'access-token': DHAN_CONFIG.ACCESS_TOKEN,
-                'client-id': DHAN_CONFIG.CLIENT_ID,
-                'Accept': 'application/json'
-            };
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(payload)
-                });
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    throw new Error(`HTTP error! Status: ${response.status}, Body: ${errorBody}`);
-                }
-                // This proxy doesn't wrap the response, so we can parse it directly.
-                return await response.json();
-
-            } catch (error) {
-                console.error(`Fetch error for ${endpoint}:`, error);
-                throw new Error(`Error Name: ${error.name}\nError Message: ${error.message}`);
-            }
-        }
-
         async function fetchData() {
-            if (DHAN_CONFIG.CLIENT_ID === "YOUR_CLIENT_ID") {
-                showError("Please enter your Dhan API credentials in the script.");
-                return null;
-            }
             try {
-                const expiryPayload = { "UnderlyingScrip": 13, "UnderlyingSeg": "IDX_I" };
-                const expiryResponse = await fetchFromDhan('/optionchain/expirylist', expiryPayload);
-                if (expiryResponse.status !== 'success' || !expiryResponse.data?.length) {
-                    throw new Error(`Could not fetch expiry dates: ${JSON.stringify(expiryResponse)}`);
+                // The URL now points to our own serverless function
+                const response = await fetch('/.netlify/functions/dhan');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Function returned an error: ${response.status} - ${errorText}`);
                 }
-                const nearestExpiry = expiryResponse.data[0];
-
-                await sleep(1000); // Wait 1 second before next call
-
-                const ocPayload = { "UnderlyingScrip": 13, "UnderlyingSeg": "IDX_I", "Expiry": nearestExpiry };
-                const ocResponse = await fetchFromDhan('/optionchain', ocPayload);
-                 if (ocResponse.status !== 'success' || !ocResponse.data?.oc) {
-                    throw new Error(`Could not fetch option chain: ${JSON.stringify(ocResponse)}`);
-                }
-                
-                return {
-                    oc_data: ocResponse.data,
-                    spot_price: ocResponse.data.last_price,
-                    expiry: nearestExpiry
-                };
-
+                return await response.json();
             } catch (error) {
-                showError("Failed during API call.", error.message);
+                showError("Failed to fetch data from the serverless function.", error.message);
                 return null;
             }
         }
-        
+
         function processData(apiPayload) {
-            const { oc_data, spot_price, expiry } = apiPayload;
-            
+            const { oc_data, spot_price } = apiPayload;
             const rows = Object.entries(oc_data.oc).map(([strike, options]) => {
-                const ce = options.ce || {};
-                const pe = options.pe || {};
+                const ce = options.ce || {}; const pe = options.pe || {};
                 return {
                     'Strike Price': parseFloat(strike),
-                    'CE Change': (ce.oi || 0) - (ce.previous_oi || 0),
-                    'CE OI': ce.oi || 0,
-                    'CE Volume': ce.volume || 0,
-                    'PE OI': pe.oi || 0,
-                    'PE Change': (pe.oi || 0) - (pe.previous_oi || 0),
-                    'PE Volume': pe.volume || 0,
+                    'CE Change': (ce.oi || 0) - (ce.previous_oi || 0), 'CE OI': ce.oi || 0, 'CE Volume': ce.volume || 0,
+                    'PE OI': pe.oi || 0, 'PE Change': (pe.oi || 0) - (pe.previous_oi || 0), 'PE Volume': pe.volume || 0,
                 };
             }).sort((a, b) => a['Strike Price'] - b['Strike Price']);
-
-            const df = rows; // Use array of objects as our "DataFrame"
-
-            const totalCE_OI = df.reduce((sum, row) => sum + row['CE OI'], 0);
-            const totalPE_OI = df.reduce((sum, row) => sum + row['PE OI'], 0);
-
+            const totalCE_OI = rows.reduce((sum, row) => sum + row['CE OI'], 0);
+            const totalPE_OI = rows.reduce((sum, row) => sum + row['PE OI'], 0);
             const analytics = {
                 spot: spot_price,
-                expiry: expiry,
                 pcr_oi: totalCE_OI > 0 ? (totalPE_OI / totalCE_OI).toFixed(2) : 0,
-                max_pain: calculateMaxPain(df)
+                max_pain: calculateMaxPain(rows)
             };
-            
-            return { analytics, fullData: df };
+            return { analytics, fullData: rows };
         }
 
         function calculateMaxPain(df) {
-            let minLoss = Infinity;
-            let maxPainStrike = 0;
-
+            let minLoss = Infinity, maxPainStrike = 0;
             const strikes = df.map(row => row['Strike Price']);
-
             strikes.forEach(expiryStrike => {
                 let totalLoss = 0;
                 df.forEach(row => {
-                    if (row['Strike Price'] > expiryStrike) {
-                        totalLoss += (row['Strike Price'] - expiryStrike) * row['CE OI'];
-                    } else if (row['Strike Price'] < expiryStrike) {
-                        totalLoss += (expiryStrike - row['Strike Price']) * row['PE OI'];
-                    }
+                    if (row['Strike Price'] > expiryStrike) totalLoss += (row['Strike Price'] - expiryStrike) * row['CE OI'];
+                    else if (row['Strike Price'] < expiryStrike) totalLoss += (expiryStrike - row['Strike Price']) * row['PE OI'];
                 });
-                if (totalLoss < minLoss) {
-                    minLoss = totalLoss;
-                    maxPainStrike = expiryStrike;
-                }
+                if (totalLoss < minLoss) { minLoss = totalLoss; maxPainStrike = expiryStrike; }
             });
             return maxPainStrike;
         }
 
-
-        // =============================================================================
-        // 3. UI RENDERING FUNCTIONS
-        // =============================================================================
-
         function renderKPIs(analytics) {
-            document.getElementById('spot-value').textContent = indianFormat(analytics.spot);
-            
-            const pcrEl = document.getElementById('pcr-oi-value');
-            pcrEl.textContent = analytics.pcr_oi;
-            pcrEl.className = 'text-2xl font-bold mt-1 ';
-            if (analytics.pcr_oi > 1) pcrEl.classList.add('text-green-600');
-            else if (analytics.pcr_oi < 0.7) pcrEl.classList.add('text-red-600');
-            else pcrEl.classList.add('text-yellow-500');
-
-            document.getElementById('max-pain-value').textContent = indianFormat(analytics.max_pain);
-
+            document.getElementById('spot-value').textContent = analytics.spot.toLocaleString('en-IN');
+            document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
+            document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
             const sentimentEl = document.getElementById('sentiment-meter');
-            if (analytics.pcr_oi > 1.1) {
-                sentimentEl.textContent = 'Bullish';
-                sentimentEl.className = 'text-2xl font-bold mt-1 text-green-600';
-            } else if (analytics.pcr_oi < 0.7) {
-                sentimentEl.textContent = 'Bearish';
-                sentimentEl.className = 'text-2xl font-bold mt-1 text-red-600';
-            } else {
-                sentimentEl.textContent = 'Neutral';
-                sentimentEl.className = 'text-2xl font-bold mt-1 text-yellow-500';
-            }
+            if (analytics.pcr_oi > 1.1) { sentimentEl.textContent = 'Bullish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-green-600'; }
+            else if (analytics.pcr_oi < 0.7) { sentimentEl.textContent = 'Bearish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-red-600'; }
+            else { sentimentEl.textContent = 'Neutral'; sentimentEl.className = 'text-2xl font-bold mt-1 text-yellow-500'; }
         }
-        
+
         function renderOptionChain(df, spot_price) {
             const tableBody = document.getElementById('option-chain-body');
             tableBody.innerHTML = '';
-
-            const spotIndex = df.findIndex((row, i) => {
-                return i > 0 && df[i-1]['Strike Price'] < spot_price && row['Strike Price'] >= spot_price;
-            });
-
-            const startIndex = Math.max(0, spotIndex - 5);
-            const endIndex = Math.min(df.length, spotIndex + 6);
-            const visibleData = df.slice(startIndex, endIndex);
-
+            const spotIndex = df.findIndex((row, i) => i > 0 && df[i-1]['Strike Price'] < spot_price && row['Strike Price'] >= spot_price);
+            const visibleData = df.slice(Math.max(0, spotIndex - 5), Math.min(df.length, spotIndex + 6));
             visibleData.forEach(row => {
                 const isATM = Math.abs(row['Strike Price'] - spot_price) === Math.min(...df.map(r => Math.abs(r['Strike Price'] - spot_price)));
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-gray-200';
-                
-                tr.innerHTML = `
-                    <td class="p-3 bg-red-50">${indianFormat(row['CE OI'])}</td>
-                    <td class="p-3 bg-red-50">${indianFormat(row['CE Change'])}</td>
-                    <td class="p-3 bg-red-50">${indianFormat(row['CE Volume'])}</td>
-                    <td class="p-3 font-bold ${isATM ? 'bg-yellow-300' : 'bg-gray-800 text-white'}">${indianFormat(row['Strike Price'])}</td>
-                    <td class="p-3 bg-green-50">${indianFormat(row['PE OI'])}</td>
-                    <td class="p-3 bg-green-50">${indianFormat(row['PE Change'])}</td>
-                    <td class="p-3 bg-green-50">${indianFormat(row['PE Volume'])}</td>
-                `;
+                tr.innerHTML = `<td class="p-3 bg-red-50">${row['CE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Volume'].toLocaleString('en-IN')}</td><td class="p-3 font-bold ${isATM ? 'bg-yellow-300' : 'bg-gray-800 text-white'}">${row['Strike Price'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Volume'].toLocaleString('en-IN')}</td>`;
                 tableBody.appendChild(tr);
             });
         }
-
-        function renderOIChart(df, spot_price) {
-            renderBarChart('#oi-profile-chart', df, 'PE OI', 'CE OI', 'green', 'red', spot_price);
-        }
-
-        function renderChangeOIChart(df, spot_price) {
-            renderBarChart('#change-oi-chart', df, 'PE Change', 'CE Change', 'green', 'red', spot_price);
-        }
-
-        function renderBarChart(selector, data, key1, key2, color1, color2, spot) {
-            const container = d3.select(selector);
-            container.selectAll("*").remove(); // Clear previous chart
-
-            const margin = {top: 20, right: 20, bottom: 30, left: 50};
-            const width = container.node().getBoundingClientRect().width - margin.left - margin.right;
-            const height = 300 - margin.top - margin.bottom;
-
-            const svg = container.append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-
-            const x = d3.scaleBand()
-                .domain(data.map(d => d['Strike Price']))
-                .range([0, width])
-                .padding(0.1);
-
-            const y = d3.scaleLinear()
-                .domain([0, d3.max(data, d => Math.max(d[key1], d[key2]))])
-                .nice()
-                .range([height, 0]);
-
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x).tickValues(x.domain().filter((d,i) => !(i%3))));
-
-            svg.append("g")
-                .attr("class", "axis")
-                .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format("~s")));
-
-            svg.selectAll(".bar1")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar1")
-                .attr("x", d => x(d['Strike Price']))
-                .attr("y", d => y(d[key1]))
-                .attr("width", x.bandwidth() / 2)
-                .attr("height", d => height - y(d[key1]))
-                .attr("fill", color1);
-
-            svg.selectAll(".bar2")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar2")
-                .attr("x", d => x(d['Strike Price']) + x.bandwidth() / 2)
-                .attr("y", d => y(d[key2]))
-                .attr("width", x.bandwidth() / 2)
-                .attr("height", d => height - y(d[key2]))
-                .attr("fill", color2);
-            
-            // Spot Price Line
-            svg.append("line")
-               .attr("x1", x(spot) + x.bandwidth()/2)
-               .attr("x2", x(spot) + x.bandwidth()/2)
-               .attr("y1", 0)
-               .attr("y2", height)
-               .attr("stroke", "blue")
-               .attr("stroke-width", 2)
-               .attr("stroke-dasharray", "4");
-        }
-
-
-        // =============================================================================
-        // 4. MAIN APPLICATION FLOW
-        // =============================================================================
 
         async function main() {
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('dashboard-content').classList.add('hidden');
             document.getElementById('error-message').classList.add('hidden');
-
             const apiPayload = await fetchData();
             if (apiPayload) {
                 const { analytics, fullData } = processData(apiPayload);
-                appState.analytics = analytics;
-                appState.fullData = fullData;
-
                 renderKPIs(analytics);
                 renderOptionChain(fullData, analytics.spot);
-                renderOIChart(fullData, analytics.spot);
-                renderChangeOIChart(fullData, analytics.spot);
-
+                // Charts can be re-added here if needed
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('dashboard-content').classList.remove('hidden');
                 document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
             }
         }
-
-        // Initial load and set interval for auto-refresh
-        document.addEventListener('DOMContentLoaded', () => {
-            main(); // Initial fetch
-            setInterval(main, 60000); // Refresh every 60 seconds
-        });
-
+        document.addEventListener('DOMContentLoaded', () => { main(); setInterval(main, 60000); });
     </script>
 </body>
 </html>
-
