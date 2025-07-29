@@ -86,14 +86,17 @@ exports.handler = async function (event, context) {
         if (ocData.status !== 'success' || !ocData.data?.oc) throw new Error(`Failed to fetch option chain: ${JSON.stringify(ocData)}`);
 
         const spot_price = ocData.data.last_price;
-        const previous_close_price = ocData.data.oc[Object.keys(ocData.data.oc)[0]].ce.previous_close_price; // Get previous close from an option
+        const firstStrikeData = ocData.data.oc[Object.keys(ocData.data.oc)[0]];
+        const previous_close_price = firstStrikeData?.ce?.previous_close_price || firstStrikeData?.pe?.previous_close_price || spot_price;
 
         const df = Object.entries(ocData.data.oc).map(([strike, options]) => {
             const ce = options.ce || {}; const pe = options.pe || {};
             return {
                 'Strike Price': parseFloat(strike),
                 'CE Change': (ce.oi || 0) - (ce.previous_oi || 0), 'CE OI': ce.oi || 0, 'CE Volume': ce.volume || 0,
+                'CE IV': ce.implied_volatility || 0, 'CE LTP': ce.last_price || 0,
                 'PE OI': pe.oi || 0, 'PE Change': (pe.oi || 0) - (pe.previous_oi || 0), 'PE Volume': pe.volume || 0,
+                'PE IV': pe.implied_volatility || 0, 'PE LTP': pe.last_price || 0,
             };
         }).sort((a, b) => a['Strike Price'] - b['Strike Price']);
 
@@ -111,6 +114,8 @@ exports.handler = async function (event, context) {
 
         const findMaxIndex = (key) => df.reduce((maxIndex, row, index, arr) => row[key] > arr[maxIndex][key] ? index : maxIndex, 0);
 
+        const atmStrikeRow = df.reduce((prev, curr) => Math.abs(curr['Strike Price'] - spot_price) < Math.abs(prev['Strike Price'] - spot_price) ? curr : prev);
+
         const analytics = {
             spot: spot_price,
             previous_close: previous_close_price,
@@ -122,6 +127,8 @@ exports.handler = async function (event, context) {
             buy_put_level_simple: df[findMaxIndex('CE Change')]['Strike Price'],
             buy_call_level_scored: df[findMaxIndex('Support_Score')]['Strike Price'],
             buy_put_level_scored: df[findMaxIndex('Resistance_Score')]['Strike Price'],
+            atm_iv: (atmStrikeRow['CE IV'] + atmStrikeRow['PE IV']) / 2,
+            atm_straddle_price: atmStrikeRow['CE LTP'] + atmStrikeRow['PE LTP'],
         };
 
         analytics.call_conviction = calculateSignalConviction('call', analytics, df);

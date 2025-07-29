@@ -39,7 +39,7 @@
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            background: conic-gradient(from -90deg, #ef4444, #f59e0b, #10b981);
+            background: conic-gradient(from -90deg, #10b981, #f59e0b, #ef4444);
             position: absolute;
             top: 0;
         }
@@ -131,7 +131,7 @@
                 <div class="text-center">
                     <h3 class="text-sm font-medium text-gray-500">PCR (OI)</h3>
                     <div class="gauge-container mt-2">
-                        <div class="gauge-bg"></div>
+                        <div class="gauge-bg" style="background: conic-gradient(from -90deg, #ef4444, #f59e0b, #10b981);"></div>
                         <div class="gauge-cover"></div>
                         <div id="pcr-needle" class="gauge-needle"></div>
                     </div>
@@ -143,6 +143,43 @@
                 </div>
             </div>
         </div>
+
+        <div class="card">
+            <h2 class="text-xl font-bold text-center mb-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Volatility & Market Move
+            </h2>
+            <div class="grid grid-cols-2 gap-4 items-center">
+                <div class="text-center">
+                    <h3 class="text-sm font-medium text-gray-500">ATM IV</h3>
+                    <div class="gauge-container mt-2">
+                        <div class="gauge-bg" style="background: conic-gradient(from -90deg, #10b981, #f59e0b, #ef4444);"></div>
+                        <div class="gauge-cover"></div>
+                        <div id="iv-needle" class="gauge-needle"></div>
+                    </div>
+                    <p id="atm-iv-value" class="text-2xl font-bold mt-1">--</p>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-sm font-medium text-gray-500">ATM Straddle Price</h3>
+                    <p id="atm-straddle-price" class="text-3xl font-bold mt-1">--</p>
+                    <p class="text-xs text-gray-400">Market's Expected Move</p>
+                </div>
+            </div>
+            <div class="mt-6 border-t pt-4 text-center">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Total OI Change</h3>
+                <div class="flex justify-center space-x-6">
+                    <div>
+                        <p class="font-semibold text-green-600">Puts Added</p>
+                        <p id="total-pe-change" class="text-xl font-bold">--</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-red-600">Calls Added</p>
+                        <p id="total-ce-change" class="text-xl font-bold">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 <script>
@@ -171,11 +208,8 @@
         const spotEl = document.getElementById('spot-value');
         spotEl.textContent = analytics.spot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         spotEl.classList.remove('text-green-600', 'text-red-600');
-        if (analytics.spot > analytics.previous_close) {
-            spotEl.classList.add('text-green-600');
-        } else {
-            spotEl.classList.add('text-red-600');
-        }
+        if (analytics.spot > analytics.previous_close) spotEl.classList.add('text-green-600');
+        else spotEl.classList.add('text-red-600');
 
         // Signals
         document.getElementById('buy-call-signal-scored').textContent = analytics.buy_call_level_scored.toLocaleString('en-IN');
@@ -190,8 +224,21 @@
         // PCR Gauge
         const pcrValue = parseFloat(analytics.pcr_oi);
         const pcrMin = 0.5, pcrMax = 1.5;
-        const angle = -90 + ((Math.max(pcrMin, Math.min(pcrMax, pcrValue)) - pcrMin) / (pcrMax - pcrMin)) * 180;
-        document.getElementById('pcr-needle').style.transform = `rotate(${angle}deg)`;
+        const pcrAngle = -90 + ((Math.max(pcrMin, Math.min(pcrMax, pcrValue)) - pcrMin) / (pcrMax - pcrMin)) * 180;
+        document.getElementById('pcr-needle').style.transform = `rotate(${pcrAngle}deg)`;
+
+        // Volatility & Market Move
+        document.getElementById('atm-iv-value').textContent = `${analytics.atm_iv.toFixed(2)}%`;
+        document.getElementById('atm-straddle-price').textContent = analytics.atm_straddle_price.toLocaleString('en-IN');
+        document.getElementById('total-pe-change').textContent = analytics.total_pe_change.toLocaleString('en-IN');
+        document.getElementById('total-ce-change').textContent = analytics.total_ce_change.toLocaleString('en-IN');
+
+        // ATM IV Gauge
+        const ivValue = parseFloat(analytics.atm_iv);
+        const ivMin = 8, ivMax = 25; // Typical range for Nifty IV
+        const ivAngle = -90 + ((Math.max(ivMin, Math.min(ivMax, ivValue)) - ivMin) / (ivMax - ivMin)) * 180;
+        document.getElementById('iv-needle').style.transform = `rotate(${ivAngle}deg)`;
+
 
         // Conviction Analysis
         const createConvictionHTML = (conviction, type) => {
