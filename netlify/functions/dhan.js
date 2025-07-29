@@ -1,7 +1,7 @@
+// Using require syntax for node-fetch version 2
 const fetch = require('node-fetch');
 
 exports.handler = async function (event, context) {
-    // Securely get API keys from Netlify's environment variables
     const CLIENT_ID = process.env.DHAN_CLIENT_ID;
     const ACCESS_TOKEN = process.env.DHAN_ACCESS_TOKEN;
     const BASE_URL = "https://api.dhan.co/v2";
