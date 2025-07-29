@@ -29,41 +29,90 @@
             <pre class="mt-2 text-sm whitespace-pre-wrap" id="error-text"></pre>
         </div>
         <main id="dashboard-content" class="hidden">
-            <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                    <h2 class="text-sm font-medium text-gray-500">Nifty Spot</h2>
-                    <p id="spot-value" class="text-2xl font-bold text-blue-600 mt-1">--</p>
+            
+            <!-- Priority Dashboard Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Priority Dashboard</h2>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-500">Nifty Spot</h3>
+                    <p id="spot-value" class="text-4xl font-bold text-blue-600 mt-1">--</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                    <h2 class="text-sm font-medium text-gray-500">PCR (OI)</h2>
-                    <p id="pcr-oi-value" class="text-2xl font-bold mt-1">--</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Scored Signals Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-bold text-center mb-3">Multi-Factor Signals</h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-green-600 font-semibold">Buy Call Signal</p>
+                                <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
+                            </div>
+                            <div>
+                                <p class="text-red-600 font-semibold">Buy Put Signal</p>
+                                <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Simple Signals Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-bold text-center mb-3 text-gray-600">Simple OI Change Signals</h3>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-green-600 font-semibold">Buy Call Signal</p>
+                                <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
+                            </div>
+                            <div>
+                                <p class="text-red-600 font-semibold">Buy Put Signal</p>
+                                <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                    <h2 class="text-sm font-medium text-gray-500">Max Pain</h2>
-                    <p id="max-pain-value" class="text-2xl font-bold mt-1">--</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                    <h2 class="text-sm font-medium text-gray-500">Sentiment</h2>
-                    <p id="sentiment-meter" class="text-2xl font-bold mt-1">--</p>
+                 <!-- Conviction Analysis Card -->
+                <div class="bg-white p-6 rounded-xl shadow-sm mt-4">
+                    <h3 class="text-lg font-bold text-center mb-4">Conviction Analysis</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="call-conviction-container">
+                            <!-- Call conviction content here -->
+                        </div>
+                        <div id="put-conviction-container">
+                            <!-- Put conviction content here -->
+                        </div>
+                    </div>
                 </div>
             </section>
-            <section class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-center">
-                        <thead class="bg-blue-600 text-white">
-                            <tr>
-                                <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
-                                <th class="p-3 font-semibold bg-gray-800">Strike</th>
-                                <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
-                            </tr>
-                        </thead>
-                        <tbody id="option-chain-body"></tbody>
-                    </table>
+
+            <!-- Market Overview Section -->
+            <section>
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">Market Overview</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                        <h2 class="text-sm font-medium text-gray-500">PCR (OI)</h2>
+                        <p id="pcr-oi-value" class="text-2xl font-bold mt-1">--</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                        <h2 class="text-sm font-medium text-gray-500">Max Pain</h2>
+                        <p id="max-pain-value" class="text-2xl font-bold mt-1">--</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center col-span-2 md:col-span-1">
+                        <h2 class="text-sm font-medium text-gray-500">Sentiment</h2>
+                        <p id="sentiment-meter" class="text-2xl font-bold mt-1">--</p>
+                    </div>
                 </div>
-            </section>
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm"><h3 class="font-semibold text-center mb-2">OI Profile</h3><div id="oi-profile-chart"></div></div>
-                <div class="bg-white p-4 rounded-xl shadow-sm"><h3 class="font-semibold text-center mb-2">Change in OI Profile</h3><div id="change-oi-chart"></div></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-center">
+                            <thead class="bg-blue-600 text-white">
+                                <tr>
+                                    <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
+                                    <th class="p-3 font-semibold bg-gray-800">Strike</th>
+                                    <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody id="option-chain-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -76,7 +125,6 @@
 
         async function fetchData() {
             try {
-                // The URL now points to our own serverless function
                 const response = await fetch('/.netlify/functions/dhan');
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -89,57 +137,57 @@
             }
         }
 
-        function processData(apiPayload) {
-            const { oc_data, spot_price } = apiPayload;
-            const rows = Object.entries(oc_data.oc).map(([strike, options]) => {
-                const ce = options.ce || {}; const pe = options.pe || {};
-                return {
-                    'Strike Price': parseFloat(strike),
-                    'CE Change': (ce.oi || 0) - (ce.previous_oi || 0), 'CE OI': ce.oi || 0, 'CE Volume': ce.volume || 0,
-                    'PE OI': pe.oi || 0, 'PE Change': (pe.oi || 0) - (pe.previous_oi || 0), 'PE Volume': pe.volume || 0,
-                };
-            }).sort((a, b) => a['Strike Price'] - b['Strike Price']);
-            const totalCE_OI = rows.reduce((sum, row) => sum + row['CE OI'], 0);
-            const totalPE_OI = rows.reduce((sum, row) => sum + row['PE OI'], 0);
-            const analytics = {
-                spot: spot_price,
-                pcr_oi: totalCE_OI > 0 ? (totalPE_OI / totalCE_OI).toFixed(2) : 0,
-                max_pain: calculateMaxPain(rows)
-            };
-            return { analytics, fullData: rows };
-        }
-
-        function calculateMaxPain(df) {
-            let minLoss = Infinity, maxPainStrike = 0;
-            const strikes = df.map(row => row['Strike Price']);
-            strikes.forEach(expiryStrike => {
-                let totalLoss = 0;
-                df.forEach(row => {
-                    if (row['Strike Price'] > expiryStrike) totalLoss += (row['Strike Price'] - expiryStrike) * row['CE OI'];
-                    else if (row['Strike Price'] < expiryStrike) totalLoss += (expiryStrike - row['Strike Price']) * row['PE OI'];
-                });
-                if (totalLoss < minLoss) { minLoss = totalLoss; maxPainStrike = expiryStrike; }
-            });
-            return maxPainStrike;
-        }
-
-        function renderKPIs(analytics) {
+        function renderPriorityDashboard(analytics) {
             document.getElementById('spot-value').textContent = analytics.spot.toLocaleString('en-IN');
+            document.getElementById('buy-call-signal-scored').textContent = analytics.buy_call_level_scored.toLocaleString('en-IN');
+            document.getElementById('buy-put-signal-scored').textContent = analytics.buy_put_level_scored.toLocaleString('en-IN');
+            document.getElementById('buy-call-signal-simple').textContent = analytics.buy_call_level_simple.toLocaleString('en-IN');
+            document.getElementById('buy-put-signal-simple').textContent = analytics.buy_put_level_simple.toLocaleString('en-IN');
+
+            const createConvictionHTML = (conviction, type) => {
+                let color = 'bg-gray-200 text-gray-800';
+                if (conviction.strength === 'Strong') color = type === 'call' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+                else if (conviction.strength === 'Medium') color = 'bg-yellow-400 text-white';
+
+                let factorsHTML = '';
+                if (conviction.supporting.length > 0) {
+                    factorsHTML += '<p class="font-semibold text-green-600 mt-2">Supporting:</p><ul class="list-disc list-inside text-left text-xs">';
+                    conviction.supporting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
+                    factorsHTML += '</ul>';
+                }
+                if (conviction.contradicting.length > 0) {
+                    factorsHTML += '<p class="font-semibold text-red-600 mt-2">Contradicting:</p><ul class="list-disc list-inside text-left text-xs">';
+                    conviction.contradicting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
+                    factorsHTML += '</ul>';
+                }
+
+                return `
+                    <div class="text-center border-l-4 ${type === 'call' ? 'border-green-500' : 'border-red-500'} pl-4">
+                        <p class="font-bold text-lg">${type === 'call' ? 'Call' : 'Put'} Conviction</p>
+                        <span class="px-3 py-1 text-sm font-bold rounded-full ${color}">${conviction.strength}</span>
+                        <div class="mt-2">${factorsHTML}</div>
+                    </div>
+                `;
+            };
+
+            document.getElementById('call-conviction-container').innerHTML = createConvictionHTML(analytics.call_conviction, 'call');
+            document.getElementById('put-conviction-container').innerHTML = createConvictionHTML(analytics.put_conviction, 'put');
+        }
+
+        function renderOverviewDashboard(analytics, df) {
             document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
             document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
             const sentimentEl = document.getElementById('sentiment-meter');
             if (analytics.pcr_oi > 1.1) { sentimentEl.textContent = 'Bullish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-green-600'; }
             else if (analytics.pcr_oi < 0.7) { sentimentEl.textContent = 'Bearish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-red-600'; }
             else { sentimentEl.textContent = 'Neutral'; sentimentEl.className = 'text-2xl font-bold mt-1 text-yellow-500'; }
-        }
 
-        function renderOptionChain(df, spot_price) {
             const tableBody = document.getElementById('option-chain-body');
             tableBody.innerHTML = '';
-            const spotIndex = df.findIndex((row, i) => i > 0 && df[i-1]['Strike Price'] < spot_price && row['Strike Price'] >= spot_price);
+            const spotIndex = df.findIndex((row, i) => i > 0 && df[i-1]['Strike Price'] < analytics.spot && row['Strike Price'] >= analytics.spot);
             const visibleData = df.slice(Math.max(0, spotIndex - 5), Math.min(df.length, spotIndex + 6));
             visibleData.forEach(row => {
-                const isATM = Math.abs(row['Strike Price'] - spot_price) === Math.min(...df.map(r => Math.abs(r['Strike Price'] - spot_price)));
+                const isATM = Math.abs(row['Strike Price'] - analytics.spot) === Math.min(...df.map(r => Math.abs(r['Strike Price'] - analytics.spot)));
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-gray-200';
                 tr.innerHTML = `<td class="p-3 bg-red-50">${row['CE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Volume'].toLocaleString('en-IN')}</td><td class="p-3 font-bold ${isATM ? 'bg-yellow-300' : 'bg-gray-800 text-white'}">${row['Strike Price'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Volume'].toLocaleString('en-IN')}</td>`;
@@ -153,10 +201,8 @@
             document.getElementById('error-message').classList.add('hidden');
             const apiPayload = await fetchData();
             if (apiPayload) {
-                const { analytics, fullData } = processData(apiPayload);
-                renderKPIs(analytics);
-                renderOptionChain(fullData, analytics.spot);
-                // Charts can be re-added here if needed
+                renderPriorityDashboard(apiPayload.analytics);
+                renderOverviewDashboard(apiPayload.analytics, apiPayload.fullData);
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('dashboard-content').classList.remove('hidden');
                 document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
