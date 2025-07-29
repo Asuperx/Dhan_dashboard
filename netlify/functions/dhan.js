@@ -86,7 +86,8 @@ exports.handler = async function (event, context) {
         if (ocData.status !== 'success' || !ocData.data?.oc) throw new Error(`Failed to fetch option chain: ${JSON.stringify(ocData)}`);
 
         const spot_price = ocData.data.last_price;
-        const firstStrikeData = ocData.data.oc[Object.keys(ocData.data.oc)[0]];
+        const firstStrikeKey = Object.keys(ocData.data.oc)[0];
+        const firstStrikeData = ocData.data.oc[firstStrikeKey];
         const previous_close_price = firstStrikeData?.ce?.previous_close_price || firstStrikeData?.pe?.previous_close_price || spot_price;
 
         const df = Object.entries(ocData.data.oc).map(([strike, options]) => {

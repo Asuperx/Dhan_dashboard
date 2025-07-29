@@ -62,6 +62,22 @@
             transform-origin: bottom;
             transition: transform 0.5s ease-in-out;
         }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        .signal-alert-call {
+            animation: pulse-green 2s infinite;
+            border-radius: 0.5rem;
+        }
+        .signal-alert-put {
+            animation: pulse-red 2s infinite;
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -101,15 +117,15 @@
                 <div class="col-span-2 border-t pt-4 mt-2">
                     <p class="text-sm text-green-600 font-semibold mb-1">Buy Call</p>
                     <div class="grid grid-cols-2">
-                        <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
-                        <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
+                        <p id="buy-call-signal-scored" class="text-2xl font-bold p-1">--</p>
+                        <p id="buy-call-signal-simple" class="text-2xl font-bold p-1">--</p>
                     </div>
                 </div>
                 <div class="col-span-2 border-t pt-4 mt-2">
                     <p class="text-sm text-red-600 font-semibold mb-1">Buy Put</p>
                     <div class="grid grid-cols-2">
-                        <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
-                        <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
+                        <p id="buy-put-signal-scored" class="text-2xl font-bold p-1">--</p>
+                        <p id="buy-put-signal-simple" class="text-2xl font-bold p-1">--</p>
                     </div>
                 </div>
             </div>
@@ -139,7 +155,10 @@
                 </div>
                 <div class="text-center">
                     <h3 class="text-sm font-medium text-gray-500">Max Pain</h3>
-                    <p id="max-pain-value" class="text-3xl font-bold mt-1">--</p>
+                    <div class="flex items-center justify-center">
+                        <p id="max-pain-value" class="text-3xl font-bold mt-1">--</p>
+                        <span id="max-pain-magnet" class="ml-2"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,7 +166,7 @@
         <div class="card">
             <h2 class="text-xl font-bold text-center mb-4 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                Volatility & Market Move
+                Volatility & Momentum
             </h2>
             <div class="grid grid-cols-2 gap-4 items-center">
                 <div class="text-center">
@@ -165,16 +184,12 @@
                     <p class="text-xs text-gray-400">Market's Expected Move</p>
                 </div>
             </div>
-            <div class="mt-6 border-t pt-4 text-center">
-                <h3 class="text-sm font-medium text-gray-500 mb-2">Total OI Change</h3>
-                <div class="flex justify-center space-x-6">
-                    <div>
-                        <p class="font-semibold text-green-600">Puts Added</p>
-                        <p id="total-pe-change" class="text-xl font-bold">--</p>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-red-600">Calls Added</p>
-                        <p id="total-ce-change" class="text-xl font-bold">--</p>
+            <div class="mt-6 border-t pt-4">
+                <h3 class="text-sm font-medium text-gray-500 mb-2 text-center">OI Change Momentum</h3>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="oi-change-bar" class="h-4 rounded-full flex justify-between items-center text-white text-xs px-2" style="background: linear-gradient(to right, #10b981, #ef4444);">
+                        <span id="oi-put-perc"></span>
+                        <span id="oi-call-perc"></span>
                     </div>
                 </div>
             </div>
@@ -217,6 +232,19 @@
         document.getElementById('buy-call-signal-simple').textContent = analytics.buy_call_level_simple.toLocaleString('en-IN');
         document.getElementById('buy-put-signal-simple').textContent = analytics.buy_put_level_simple.toLocaleString('en-IN');
 
+        // Signal Proximity Alert
+        const callAlertEl = document.getElementById('buy-call-signal-scored');
+        const putAlertEl = document.getElementById('buy-put-signal-scored');
+        callAlertEl.classList.remove('signal-alert-call');
+        putAlertEl.classList.remove('signal-alert-put');
+        if (Math.abs(analytics.spot - analytics.buy_call_level_scored) <= 25) {
+            callAlertEl.classList.add('signal-alert-call');
+        }
+        if (Math.abs(analytics.spot - analytics.buy_put_level_scored) <= 25) {
+            putAlertEl.classList.add('signal-alert-put');
+        }
+
+
         // Market Internals
         document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
         document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
@@ -227,11 +255,27 @@
         const pcrAngle = -90 + ((Math.max(pcrMin, Math.min(pcrMax, pcrValue)) - pcrMin) / (pcrMax - pcrMin)) * 180;
         document.getElementById('pcr-needle').style.transform = `rotate(${pcrAngle}deg)`;
 
+        // Max Pain Magnet
+        const magnetEl = document.getElementById('max-pain-magnet');
+        if (analytics.spot > analytics.max_pain) {
+            magnetEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>`;
+        } else {
+            magnetEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>`;
+        }
+
         // Volatility & Market Move
         document.getElementById('atm-iv-value').textContent = `${analytics.atm_iv.toFixed(2)}%`;
         document.getElementById('atm-straddle-price').textContent = analytics.atm_straddle_price.toLocaleString('en-IN');
-        document.getElementById('total-pe-change').textContent = analytics.total_pe_change.toLocaleString('en-IN');
-        document.getElementById('total-ce-change').textContent = analytics.total_ce_change.toLocaleString('en-IN');
+
+        // OI Change Momentum Bar
+        const totalChange = analytics.total_pe_change + analytics.total_ce_change;
+        const putPerc = totalChange > 0 ? Math.round((analytics.total_pe_change / totalChange) * 100) : 50;
+        const callPerc = 100 - putPerc;
+        const oiBar = document.getElementById('oi-change-bar');
+        oiBar.style.background = `linear-gradient(to right, #10b981 ${putPerc}%, #ef4444 ${putPerc}%)`;
+        document.getElementById('oi-put-perc').textContent = `${putPerc}%`;
+        document.getElementById('oi-call-perc').textContent = `${callPerc}%`;
+
 
         // ATM IV Gauge
         const ivValue = parseFloat(analytics.atm_iv);
