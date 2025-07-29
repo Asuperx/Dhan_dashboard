@@ -3,117 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nifty Option Chain</title>
+    <title>Nifty Priority Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-    <div class="container mx-auto p-4 max-w-7xl">
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4 max-w-lg">
         <header class="mb-6 text-center">
-            <h1 class="text-3xl font-bold text-blue-600">Nifty Option Chain</h1>
-            <p class="text-gray-500" id="last-update">Fetching latest data...</p>
+            <h1 class="text-3xl font-bold text-blue-600">Nifty Priority Dashboard</h1>
+            <p class="text-gray-500 text-sm" id="last-update">Fetching latest data...</p>
         </header>
-        <div id="loader" class="flex justify-center items-center my-10">
+        
+        <div id="loader" class="flex justify-center items-center my-12">
             <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
         </div>
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative my-4" role="alert">
+        
+        <div id="error-message" class="hidden card bg-red-100 border border-red-400 text-red-700" role="alert">
             <strong class="font-bold">An Error Occurred:</strong>
             <pre class="mt-2 text-sm whitespace-pre-wrap" id="error-text"></pre>
         </div>
+
         <main id="dashboard-content" class="hidden">
             
-            <!-- Priority Dashboard Section -->
-            <section class="mb-8">
-                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Priority Dashboard</h2>
-                <div class="bg-white p-4 rounded-xl shadow-sm text-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-500">Nifty Spot</h3>
-                    <p id="spot-value" class="text-4xl font-bold text-blue-600 mt-1">--</p>
-                </div>
+            <!-- Nifty Spot Card -->
+            <div class="card text-center">
+                <h2 class="text-lg font-medium text-gray-500">Nifty Spot</h2>
+                <p id="spot-value" class="text-5xl font-bold text-blue-600 mt-1">--</p>
+            </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Scored Signals Card -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold text-center mb-3">Multi-Factor Signals</h3>
-                        <div class="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                                <p class="text-green-600 font-semibold">Buy Call Signal</p>
-                                <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
-                            </div>
-                            <div>
-                                <p class="text-red-600 font-semibold">Buy Put Signal</p>
-                                <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
-                            </div>
+            <!-- Signals Card -->
+            <div class="card">
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <h3 class="font-semibold text-gray-600">Multi-Factor Signal</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-green-600 font-semibold">Buy Call</p>
+                            <p id="buy-call-signal-scored" class="text-2xl font-bold">--</p>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm text-red-600 font-semibold">Buy Put</p>
+                            <p id="buy-put-signal-scored" class="text-2xl font-bold">--</p>
                         </div>
                     </div>
-                    <!-- Simple Signals Card -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold text-center mb-3 text-gray-600">Simple OI Change Signals</h3>
-                        <div class="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                                <p class="text-green-600 font-semibold">Buy Call Signal</p>
-                                <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
-                            </div>
-                            <div>
-                                <p class="text-red-600 font-semibold">Buy Put Signal</p>
-                                <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
-                            </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-600">Simple OI Change Signal</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-green-600 font-semibold">Buy Call</p>
+                            <p id="buy-call-signal-simple" class="text-2xl font-bold">--</p>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm text-red-600 font-semibold">Buy Put</p>
+                            <p id="buy-put-signal-simple" class="text-2xl font-bold">--</p>
                         </div>
                     </div>
                 </div>
-                 <!-- Conviction Analysis Card -->
-                <div class="bg-white p-6 rounded-xl shadow-sm mt-4">
-                    <h3 class="text-lg font-bold text-center mb-4">Conviction Analysis</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div id="call-conviction-container">
-                            <!-- Call conviction content here -->
-                        </div>
-                        <div id="put-conviction-container">
-                            <!-- Put conviction content here -->
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
 
-            <!-- Market Overview Section -->
-            <section>
-                <h2 class="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">Market Overview</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                        <h2 class="text-sm font-medium text-gray-500">PCR (OI)</h2>
+            <!-- Conviction Analysis Card -->
+            <div class="card">
+                <h2 class="text-xl font-bold text-center mb-4">Conviction Analysis</h2>
+                <div class="space-y-6">
+                    <div id="call-conviction-container">
+                        <!-- Call conviction content injected here -->
+                    </div>
+                    <div id="put-conviction-container">
+                        <!-- Put conviction content injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Internals Card -->
+            <div class="card">
+                 <h2 class="text-xl font-bold text-center mb-4">Market Internals</h2>
+                 <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">PCR (OI)</h3>
                         <p id="pcr-oi-value" class="text-2xl font-bold mt-1">--</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-                        <h2 class="text-sm font-medium text-gray-500">Max Pain</h2>
+                     <div>
+                        <h3 class="text-sm font-medium text-gray-500">Max Pain</h3>
                         <p id="max-pain-value" class="text-2xl font-bold mt-1">--</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm text-center col-span-2 md:col-span-1">
-                        <h2 class="text-sm font-medium text-gray-500">Sentiment</h2>
-                        <p id="sentiment-meter" class="text-2xl font-bold mt-1">--</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-center">
-                            <thead class="bg-blue-600 text-white">
-                                <tr>
-                                    <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
-                                    <th class="p-3 font-semibold bg-gray-800">Strike</th>
-                                    <th class="p-3 font-semibold">OI</th><th class="p-3 font-semibold">Change OI</th><th class="p-3 font-semibold">Volume</th>
-                                </tr>
-                            </thead>
-                            <tbody id="option-chain-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+                 </div>
+            </div>
+
         </main>
     </div>
     <script>
@@ -137,35 +124,52 @@
             }
         }
 
-        function renderPriorityDashboard(analytics) {
-            document.getElementById('spot-value').textContent = analytics.spot.toLocaleString('en-IN');
+        function renderDashboard(analytics) {
+            // Priority Dashboard
+            document.getElementById('spot-value').textContent = analytics.spot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('buy-call-signal-scored').textContent = analytics.buy_call_level_scored.toLocaleString('en-IN');
             document.getElementById('buy-put-signal-scored').textContent = analytics.buy_put_level_scored.toLocaleString('en-IN');
             document.getElementById('buy-call-signal-simple').textContent = analytics.buy_call_level_simple.toLocaleString('en-IN');
             document.getElementById('buy-put-signal-simple').textContent = analytics.buy_put_level_simple.toLocaleString('en-IN');
 
-            const createConvictionHTML = (conviction, type) => {
-                let color = 'bg-gray-200 text-gray-800';
-                if (conviction.strength === 'Strong') color = type === 'call' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
-                else if (conviction.strength === 'Medium') color = 'bg-yellow-400 text-white';
+            // Market Internals
+            document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
+            document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
 
-                let factorsHTML = '';
+            const createConvictionHTML = (conviction, type) => {
+                let colorClasses = 'border-gray-300';
+                let badgeClasses = 'bg-gray-200 text-gray-800';
+                if (conviction.strength === 'Strong') {
+                    colorClasses = type === 'call' ? 'border-green-500' : 'border-red-500';
+                    badgeClasses = type === 'call' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+                } else if (conviction.strength === 'Medium') {
+                    colorClasses = 'border-yellow-400';
+                    badgeClasses = 'bg-yellow-400 text-white';
+                }
+
+                let factorsHTML = '<div class="text-left text-sm space-y-2 mt-3">';
                 if (conviction.supporting.length > 0) {
-                    factorsHTML += '<p class="font-semibold text-green-600 mt-2">Supporting:</p><ul class="list-disc list-inside text-left text-xs">';
+                    factorsHTML += '<div><p class="font-semibold text-green-600">Supporting:</p><ul class="list-disc list-inside text-gray-600">';
                     conviction.supporting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
-                    factorsHTML += '</ul>';
+                    factorsHTML += '</ul></div>';
                 }
                 if (conviction.contradicting.length > 0) {
-                    factorsHTML += '<p class="font-semibold text-red-600 mt-2">Contradicting:</p><ul class="list-disc list-inside text-left text-xs">';
+                    factorsHTML += '<div><p class="font-semibold text-red-600">Contradicting:</p><ul class="list-disc list-inside text-gray-600">';
                     conviction.contradicting.forEach(factor => { factorsHTML += `<li>${factor}</li>`; });
-                    factorsHTML += '</ul>';
+                    factorsHTML += '</ul></div>';
                 }
+                factorsHTML += '</div>';
 
                 return `
-                    <div class="text-center border-l-4 ${type === 'call' ? 'border-green-500' : 'border-red-500'} pl-4">
-                        <p class="font-bold text-lg">${type === 'call' ? 'Call' : 'Put'} Conviction</p>
-                        <span class="px-3 py-1 text-sm font-bold rounded-full ${color}">${conviction.strength}</span>
-                        <div class="mt-2">${factorsHTML}</div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-1.5 h-full rounded-full ${colorClasses.replace('border-', 'bg-')}"></div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <p class="font-bold text-lg">${type === 'call' ? 'Call' : 'Put'} Conviction</p>
+                                <span class="px-3 py-1 text-xs font-bold rounded-full ${badgeClasses}">${conviction.strength}</span>
+                            </div>
+                            ${factorsHTML}
+                        </div>
                     </div>
                 `;
             };
@@ -174,35 +178,13 @@
             document.getElementById('put-conviction-container').innerHTML = createConvictionHTML(analytics.put_conviction, 'put');
         }
 
-        function renderOverviewDashboard(analytics, df) {
-            document.getElementById('pcr-oi-value').textContent = analytics.pcr_oi;
-            document.getElementById('max-pain-value').textContent = analytics.max_pain.toLocaleString('en-IN');
-            const sentimentEl = document.getElementById('sentiment-meter');
-            if (analytics.pcr_oi > 1.1) { sentimentEl.textContent = 'Bullish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-green-600'; }
-            else if (analytics.pcr_oi < 0.7) { sentimentEl.textContent = 'Bearish'; sentimentEl.className = 'text-2xl font-bold mt-1 text-red-600'; }
-            else { sentimentEl.textContent = 'Neutral'; sentimentEl.className = 'text-2xl font-bold mt-1 text-yellow-500'; }
-
-            const tableBody = document.getElementById('option-chain-body');
-            tableBody.innerHTML = '';
-            const spotIndex = df.findIndex((row, i) => i > 0 && df[i-1]['Strike Price'] < analytics.spot && row['Strike Price'] >= analytics.spot);
-            const visibleData = df.slice(Math.max(0, spotIndex - 5), Math.min(df.length, spotIndex + 6));
-            visibleData.forEach(row => {
-                const isATM = Math.abs(row['Strike Price'] - analytics.spot) === Math.min(...df.map(r => Math.abs(r['Strike Price'] - analytics.spot)));
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-gray-200';
-                tr.innerHTML = `<td class="p-3 bg-red-50">${row['CE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-red-50">${row['CE Volume'].toLocaleString('en-IN')}</td><td class="p-3 font-bold ${isATM ? 'bg-yellow-300' : 'bg-gray-800 text-white'}">${row['Strike Price'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE OI'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Change'].toLocaleString('en-IN')}</td><td class="p-3 bg-green-50">${row['PE Volume'].toLocaleString('en-IN')}</td>`;
-                tableBody.appendChild(tr);
-            });
-        }
-
         async function main() {
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('dashboard-content').classList.add('hidden');
             document.getElementById('error-message').classList.add('hidden');
             const apiPayload = await fetchData();
             if (apiPayload) {
-                renderPriorityDashboard(apiPayload.analytics);
-                renderOverviewDashboard(apiPayload.analytics, apiPayload.fullData);
+                renderDashboard(apiPayload.analytics);
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('dashboard-content').classList.remove('hidden');
                 document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
