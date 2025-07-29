@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 
+// Helper functions (indianFormat, getPercentileRanks, etc.) remain the same...
 const indianFormat = (num) => {
     if (isNaN(num)) return num;
     return Math.round(num).toLocaleString('en-IN');
@@ -62,6 +63,23 @@ const calculateSignalConviction = (signalType, analytics, df) => {
     return { score, strength, supporting: sup, contradicting: con };
 };
 
+// Function to log data to Google Sheets
+async function logToGoogleSheet(data) {
+    const sheetUrl = process.env.GOOGLE_SHEET_URL;
+    if (!sheetUrl) {
+        console.log("Google Sheet URL not configured. Skipping log.");
+        return;
+    }
+    try {
+        await fetch(sheetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+    } catch (error) {
+        console.error("Error logging to Google Sheet:", error);
+    }
+}
 
 exports.handler = async function (event, context) {
     const CLIENT_ID = process.env.DHAN_CLIENT_ID;
@@ -134,6 +152,23 @@ exports.handler = async function (event, context) {
 
         analytics.call_conviction = calculateSignalConviction('call', analytics, df);
         analytics.put_conviction = calculateSignalConviction('put', analytics, df);
+
+        // Asynchronously log the signals to Google Sheets without waiting
+        if (analytics.call_conviction.strength === 'Strong' || analytics.put_conviction.strength === 'Strong') {
+            const signalToLog = analytics.call_conviction.strength === 'Strong' ?
+                { ...analytics.call_conviction, signal_type: 'Strong Call', signal_level: analytics.buy_call_level_scored, spot: analytics.spot } :
+                { ...analytics.put_conviction, signal_type: 'Strong Put', signal_level: analytics.buy_put_level_scored, spot: analytics.spot };
+
+            logToGoogleSheet({
+                spot: signalToLog.spot,
+                signal_type: signalToLog.signal_type,
+                signal_level: signalToLog.signal_level,
+                strength: signalToLog.strength,
+                score: signalToLog.score,
+                supporting: signalToLog.supporting.join(', '),
+                contradicting: signalToLog.contradicting.join(', ')
+            });
+        }
 
         return {
             statusCode: 200,
